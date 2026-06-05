@@ -49,6 +49,7 @@ mvn test
 **Suggested Next Customizations**
 - Add `.github/copilot-instructions.md` to mirror key points for GitHub Copilot and PR workflows.
 - Add a small agent skill file to automate common checks (environment variable presence, running `mvn test`, etc.).
+- Add repository rules: [.agents/rules/git-commit-message.md](.agents/rules/git-commit-message.md) — commit message guideline.
 
 ---
 Table of changed files:
