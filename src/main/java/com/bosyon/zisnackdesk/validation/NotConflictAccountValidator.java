@@ -26,7 +26,7 @@ public class NotConflictAccountValidator implements ConstraintValidator<NotConfl
 
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(SysUser::getAccount, account).isNull(SysUser::getDeletedAt);
-        Integer count = sysUserMapper.selectCount(wrapper);
+        Long count = sysUserMapper.selectCount(wrapper);
         return count == null || count == 0;
     }
 }
