@@ -8,6 +8,7 @@ import com.bosyon.zisnackdesk.model.vo.SysUserVO;
 import com.bosyon.zisnackdesk.service.SysUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.validation.Valid;
@@ -32,7 +33,8 @@ import java.util.List;
 @Validated
 public class SysUserController {
 
-    private final SysUserService sysUserService;
+    @Autowired
+    private SysUserService sysUserService;
 
     @PostMapping
     public SysUserVO createUser(@Valid @RequestBody SysUserCreateDTO createDTO) {
