@@ -19,7 +19,6 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -29,8 +28,11 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     @Override
     public SysUserVO createUser(SysUserCreateDTO createDTO) {
         SysUser user = new SysUser();
-        BeanUtils.copyProperties(createDTO, user);
-        user.setUserType(Optional.ofNullable(createDTO.getUserType()).orElse("member"));
+        user.setAccount(createDTO.account());
+        user.setMobile(createDTO.mobile());
+        user.setEmail(createDTO.email());
+        user.setPassword(createDTO.password());
+        user.setUserType(createDTO.userType());
         save(user);
         log.info("创建用户成功, id: {}, account: {}", user.getId(), user.getAccount());
         return toVO(user);
@@ -38,11 +40,17 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
     @Override
     public SysUserVO updateUser(SysUserUpdateDTO updateDTO) {
-        SysUser user = getById(updateDTO.getId());
+        SysUser user = getById(updateDTO.id());
         if (user == null) {
-            throw new RuntimeException("用户不存在, id: " + updateDTO.getId());
+            throw new RuntimeException("用户不存在, id: " + updateDTO.id());
         }
-        BeanUtils.copyProperties(updateDTO, user);
+        user.setAccount(updateDTO.account());
+        user.setMobile(updateDTO.mobile());
+        user.setEmail(updateDTO.email());
+        user.setPassword(updateDTO.password());
+        user.setUserType(updateDTO.userType());
+        user.setMobileVerified(updateDTO.mobileVerified());
+        user.setEmailVerified(updateDTO.emailVerified());
         updateById(user);
         log.info("更新用户成功, id: {}", user.getId());
         return toVO(user);
@@ -61,23 +69,23 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         wrapper.isNull(SysUser::getDeletedAt);
 
         // 动态条件拼接
-        if (StringUtils.hasText(queryDTO.getAccount())) {
-            wrapper.like(SysUser::getAccount, queryDTO.getAccount());
+        if (StringUtils.hasText(queryDTO.account())) {
+            wrapper.like(SysUser::getAccount, queryDTO.account());
         }
-        if (StringUtils.hasText(queryDTO.getMobile())) {
-            wrapper.like(SysUser::getMobile, queryDTO.getMobile());
+        if (StringUtils.hasText(queryDTO.mobile())) {
+            wrapper.like(SysUser::getMobile, queryDTO.mobile());
         }
-        if (StringUtils.hasText(queryDTO.getEmail())) {
-            wrapper.like(SysUser::getEmail, queryDTO.getEmail());
+        if (StringUtils.hasText(queryDTO.email())) {
+            wrapper.like(SysUser::getEmail, queryDTO.email());
         }
-        if (StringUtils.hasText(queryDTO.getUserType())) {
-            wrapper.eq(SysUser::getUserType, queryDTO.getUserType());
+        if (StringUtils.hasText(queryDTO.userType())) {
+            wrapper.eq(SysUser::getUserType, queryDTO.userType());
         }
-        if (queryDTO.getMobileVerified() != null) {
-            wrapper.eq(SysUser::getMobileVerified, queryDTO.getMobileVerified());
+        if (queryDTO.mobileVerified() != null) {
+            wrapper.eq(SysUser::getMobileVerified, queryDTO.mobileVerified());
         }
-        if (queryDTO.getEmailVerified() != null) {
-            wrapper.eq(SysUser::getEmailVerified, queryDTO.getEmailVerified());
+        if (queryDTO.emailVerified() != null) {
+            wrapper.eq(SysUser::getEmailVerified, queryDTO.emailVerified());
         }
 
         wrapper.orderByDesc(SysUser::getCreatedAt);

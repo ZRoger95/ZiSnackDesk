@@ -1,24 +1,30 @@
 package com.bosyon.zisnackdesk.model.dto;
 
-import lombok.Data;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
-@Data
-public class SysUserUpdateDTO {
+public record SysUserUpdateDTO(
 
-    private String id;
+        @NotBlank(message = "id 不能为空")
+        String id,
 
-    private String account;
+        String account,
 
-    private String mobile;
+        String mobile,
 
-    private String email;
+        @Email(message = "email 格式不正确")
+        String email,
 
-    private String password;
+        @Size(min = 6, max = 128, message = "password 长度应在 6 到 128 之间")
+        String password,
 
-    private String userType;
+        String userType,
 
-    private Boolean mobileVerified;
+        Boolean mobileVerified,
 
-    private Boolean emailVerified;
+        Boolean emailVerified
+
+) {
 
 }

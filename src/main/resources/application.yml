@@ -18,7 +18,7 @@ spring:
     url: ${PG_URL}
     username: ${PG_USER}
     password: ${PG_PWD}
-    type: com.alibaba.druid.pool.DruidDataSource
+#    type: com.alibaba.druid.pool.DruidDataSource
 #    hikari:
 #      pool-name: DatebookHikariCP
 #      minimum-idle: 20
@@ -32,14 +32,14 @@ spring:
 logging:
   structured:
     format:
-      # console: ecs # ????? ECS ??
-      file: logstash # ???? Logstash ??
+      # console: ecs # 控制台输出 ECS 格式
+      file: logstash # 文件输出 Logstash 格式
   logback:
     rollingpolicy:
-      max-file-size: 10MB      # ???????? 10MB[reference:8]
-      max-history: 30          # ?? 30 ?????[reference:9]
-      total-size-cap: 2GB      # ?????????? 2GB[reference:10]
-      clean-history-on-start: true # ?????????[reference:11]
+      max-file-size: 10MB      # 单个日志文件最大 10MB[reference:8]
+      max-history: 30          # 保留 30 个归档文件[reference:9]
+      total-size-cap: 2GB      # 归档日志总大小上限为 2GB[reference:10]
+      clean-history-on-start: true # 启动时清理历史归档[reference:11]
 
 server:
-  port: 5000
+  port: 8085

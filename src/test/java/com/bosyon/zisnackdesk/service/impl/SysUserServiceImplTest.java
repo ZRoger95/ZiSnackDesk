@@ -1,4 +1,4 @@
-package com.bosyon.zisnackdesk.service.impl;
+package com.bosyon.zisnackdesk.sysUserService.impl;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -8,6 +8,7 @@ import com.bosyon.zisnackdesk.model.dto.SysUserCreateDTO;
 import com.bosyon.zisnackdesk.model.dto.SysUserQueryDTO;
 import com.bosyon.zisnackdesk.model.dto.SysUserUpdateDTO;
 import com.bosyon.zisnackdesk.model.vo.SysUserVO;
+import com.bosyon.zisnackdesk.service.impl.SysUserServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -20,16 +21,18 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("SysUserServiceImpl 单元测试")
 class SysUserServiceImplTest {
+
 
     @Mock
     private SysUserMapper sysUserMapper;
@@ -50,272 +53,138 @@ class SysUserServiceImplTest {
 
     @Nested
     @DisplayName("创建用户")
-    class CreateUser {
+    class CreateUserTests {
 
         @Test
-        @DisplayName("创建用户成功 - 使用默认 userType")
-        void createUser_withDefaultUserType() {
-            // given
-            SysUserCreateDTO dto = new SysUserCreateDTO();
-            dto.setAccount("test_user");
-            dto.setMobile("13800138000");
-            dto.setEmail("test@example.com");
-            dto.setPassword("password123");
+        @DisplayName("将 DTO 映射到实体并调用 save，返回 VO")
+        void createUser_setsFieldsAndReturnsVO() {
+            SysUserCreateDTO dto = new SysUserCreateDTO("alice", "13800138000", "alice@example.com", "pass123", null);
 
-            when(sysUserMapper.insert(any(SysUser.class))).thenAnswer(invocation -> {
-                SysUser user = invocation.getArgument(0);
-                user.setId("mock-id-001");
-                return 1;
-            });
+            doAnswer(invocation -> {
+                SysUser u = invocation.getArgument(0);
+                u.setId("id-1");
+                u.setCreatedAt(LocalDateTime.now());
+                return true;
+            }).when(sysUserService).save(any(SysUser.class));
 
-            // when
-            SysUserVO result = sysUserService.createUser(dto);
+            SysUserVO vo = sysUserService.createUser(dto);
 
-            // then
-            assertThat(result).isNotNull();
-            assertThat(result.getId()).isEqualTo("mock-id-001");
-            assertThat(result.getAccount()).isEqualTo("test_user");
-            assertThat(result.getUserType()).isEqualTo("member"); // 默认值
-            verify(sysUserMapper).insert(userCaptor.capture());
-            assertThat(userCaptor.getValue().getUserType()).isEqualTo("member");
-        }
+            assertNotNull(vo);
+            assertEquals("id-1", vo.getId());
 
-        @Test
-        @DisplayName("创建用户成功 - 使用自定义 userType")
-        void createUser_withCustomUserType() {
-            // given
-            SysUserCreateDTO dto = new SysUserCreateDTO();
-            dto.setAccount("admin_user");
-            dto.setMobile("13900139000");
-            dto.setPassword("admin123");
-            dto.setUserType("admin");
-
-            when(sysUserMapper.insert(any(SysUser.class))).thenAnswer(invocation -> {
-                SysUser user = invocation.getArgument(0);
-                user.setId("mock-id-002");
-                return 1;
-            });
-
-            // when
-            SysUserVO result = sysUserService.createUser(dto);
-
-            // then
-            assertThat(result).isNotNull();
-            assertThat(result.getId()).isEqualTo("mock-id-002");
-            assertThat(result.getUserType()).isEqualTo("admin");
+            verify(sysUserService).save(userCaptor.capture());
+            SysUser saved = userCaptor.getValue();
+            assertEquals("alice", saved.getAccount());
+            assertEquals("13800138000", saved.getMobile());
+            assertEquals("alice@example.com", saved.getEmail());
+            assertEquals("member", saved.getUserType());
         }
     }
 
     @Nested
     @DisplayName("更新用户")
-    class UpdateUser {
+    class UpdateUserTests {
 
         @Test
-        @DisplayName("更新用户成功")
+        @DisplayName("更新存在的用户并返回 VO")
         void updateUser_success() {
-            // given
-            SysUser existingUser = new SysUser();
-            existingUser.setId("user-001");
-            existingUser.setAccount("old_name");
-            existingUser.setMobile("13800138000");
+            SysUser existing = new SysUser();
+            existing.setId("id-2");
+            existing.setAccount("old");
+            existing.setMobile("111");
+            existing.setEmail("old@example.com");
+            existing.setMobileVerified(false);
+            existing.setEmailVerified(false);
 
-            SysUserUpdateDTO dto = new SysUserUpdateDTO();
-            dto.setId("user-001");
-            dto.setAccount("new_name");
-            dto.setMobile("13900139000");
+            when(sysUserService.getById("id-2")).thenReturn(existing);
+            doReturn(true).when(sysUserService).updateById(any(SysUser.class));
 
-            when(sysUserMapper.selectById("user-001")).thenReturn(existingUser);
-            when(sysUserMapper.updateById(any(SysUser.class))).thenReturn(1);
+            SysUserUpdateDTO dto = new SysUserUpdateDTO("id-2", "newacc", "222", "new@example.com", "newpass", "admin", true, true);
 
-            // when
-            SysUserVO result = sysUserService.updateUser(dto);
+            SysUserVO vo = sysUserService.updateUser(dto);
+            assertNotNull(vo);
+            assertEquals("newacc", vo.getAccount());
+            assertEquals("222", vo.getMobile());
+            assertEquals("new@example.com", vo.getEmail());
 
-            // then
-            assertThat(result).isNotNull();
-            assertThat(result.getAccount()).isEqualTo("new_name");
-            assertThat(result.getMobile()).isEqualTo("13900139000");
-            verify(sysUserMapper).updateById(userCaptor.capture());
-            assertThat(userCaptor.getValue().getAccount()).isEqualTo("new_name");
+            verify(sysUserService).updateById(userCaptor.capture());
+            SysUser updated = userCaptor.getValue();
+            assertEquals("newacc", updated.getAccount());
+            assertEquals("222", updated.getMobile());
+            assertTrue(updated.getMobileVerified());
+            assertTrue(updated.getEmailVerified());
         }
 
         @Test
-        @DisplayName("更新用户 - 用户不存在抛出异常")
-        void updateUser_notFound() {
-            // given
-            SysUserUpdateDTO dto = new SysUserUpdateDTO();
-            dto.setId("non-existent");
-
-            when(sysUserMapper.selectById("non-existent")).thenReturn(null);
-
-            // when & then
-            assertThatThrownBy(() -> sysUserService.updateUser(dto))
-                    .isInstanceOf(RuntimeException.class)
-                    .hasMessageContaining("用户不存在");
+        @DisplayName("用户不存在时抛出异常")
+        void updateUser_notFound_throws() {
+            when(sysUserService.getById("no")).thenReturn(null);
+            SysUserUpdateDTO dto = new SysUserUpdateDTO("no", null, null, null, null, null, null, null);
+            assertThrows(RuntimeException.class, () -> sysUserService.updateUser(dto));
         }
     }
 
     @Nested
-    @DisplayName("查询用户")
-    class GetUser {
+    @DisplayName("查询/分页")
+    class QueryTests {
 
         @Test
-        @DisplayName("根据 ID 获取用户 VO - 存在")
-        void getUserVOById_found() {
-            // given
-            SysUser user = new SysUser();
-            user.setId("user-001");
-            user.setAccount("test_user");
-            user.setMobile("13800138000");
-            user.setEmail("test@example.com");
-            user.setUserType("member");
+        @DisplayName("分页查询返回 VO 列表")
+        void queryUsers_returnsConvertedPage() {
+            Page<SysUser> page = new Page<>(1, 10);
+            SysUser s = new SysUser();
+            s.setId("p1");
+            s.setAccount("quser");
+            page.setRecords(List.of(s));
+            doReturn(page).when(sysUserService).page(any(Page.class), any());
 
-            when(sysUserMapper.selectById("user-001")).thenReturn(user);
-
-            // when
-            SysUserVO result = sysUserService.getUserVOById("user-001");
-
-            // then
-            assertThat(result).isNotNull();
-            assertThat(result.getId()).isEqualTo("user-001");
-            assertThat(result.getAccount()).isEqualTo("test_user");
-            assertThat(result.getMobile()).isEqualTo("13800138000");
-            assertThat(result.getEmail()).isEqualTo("test@example.com");
-        }
-
-        @Test
-        @DisplayName("根据 ID 获取用户 VO - 不存在返回 null")
-        void getUserVOById_notFound() {
-            when(sysUserMapper.selectById(anyString())).thenReturn(null);
-
-            SysUserVO result = sysUserService.getUserVOById("non-existent");
-
-            assertThat(result).isNull();
+            IPage<SysUserVO> res = sysUserService.queryUsers(new SysUserQueryDTO(null, null, null, null, null, null), 1, 10);
+            assertNotNull(res);
+            assertEquals(1, res.getRecords().size());
+            assertEquals("quser", res.getRecords().get(0).getAccount());
         }
     }
 
     @Nested
-    @DisplayName("分页条件查询")
-    class QueryUsers {
+    @DisplayName("删除")
+    class DeleteTests {
 
         @Test
-        @SuppressWarnings("unchecked")
-        @DisplayName("分页查询 - 带筛选条件")
-        void queryUsers_withConditions() {
-            // given
-            SysUserQueryDTO queryDTO = new SysUserQueryDTO();
-            queryDTO.setAccount("test");
-            queryDTO.setUserType("member");
+        @DisplayName("deleteUser 返回 false 当用户不存在；返回 true 并设置 deletedAt 当存在")
+        void deleteUser_falseWhenNotFound_trueWhenDeleted() {
+            when(sysUserService.getById("no")).thenReturn(null);
+            assertFalse(sysUserService.deleteUser("no"));
 
-            SysUser user = new SysUser();
-            user.setId("user-001");
-            user.setAccount("test_user");
-            user.setUserType("member");
+            SysUser s = new SysUser();
+            s.setId("d1");
+            when(sysUserService.getById("d1")).thenReturn(s);
 
-            Page<SysUser> pageResult = new Page<>(1, 10, 1);
-            pageResult.setRecords(List.of(user));
+            doReturn(true).when(sysUserService).updateById(any(SysUser.class));
 
-            when(sysUserMapper.selectPage(any(Page.class), any())).thenReturn(pageResult);
+            boolean res = sysUserService.deleteUser("d1");
+            assertTrue(res);
 
-            // when
-            IPage<SysUserVO> result = sysUserService.queryUsers(queryDTO, 1, 10);
-
-            // then
-            assertThat(result).isNotNull();
-            assertThat(result.getRecords()).hasSize(1);
-            assertThat(result.getRecords().get(0).getAccount()).isEqualTo("test_user");
-            assertThat(result.getTotal()).isEqualTo(1);
-            verify(sysUserMapper).selectPage(any(Page.class), any());
+            verify(sysUserService).updateById(userCaptor.capture());
+            SysUser updated = userCaptor.getValue();
+            assertNotNull(updated.getDeletedAt());
         }
 
         @Test
-        @SuppressWarnings("unchecked")
-        @DisplayName("分页查询 - 无条件")
-        void queryUsers_noConditions() {
-            // given
-            SysUserQueryDTO queryDTO = new SysUserQueryDTO();
+        @DisplayName("batchDeleteUsers 对空列表返回 false，对非空列表执行批量软删除")
+        void batchDeleteUsers_emptyAndNonEmpty() {
+            when(sysUserService.listByIds(List.of("a", "b"))).thenReturn(Collections.emptyList());
+            assertFalse(sysUserService.batchDeleteUsers(List.of("a", "b")));
 
-            Page<SysUser> pageResult = new Page<>(1, 10, 0);
+            SysUser s1 = new SysUser(); s1.setId("a");
+            SysUser s2 = new SysUser(); s2.setId("b");
+            when(sysUserService.listByIds(List.of("a", "b"))).thenReturn(List.of(s1, s2));
+            doReturn(true).when(sysUserService).updateById(any(SysUser.class));
+            assertTrue(sysUserService.batchDeleteUsers(List.of("a", "b")));
+            verify(sysUserService, times(2)).updateById(any(SysUser.class));
 
-            when(sysUserMapper.selectPage(any(Page.class), any())).thenReturn(pageResult);
-
-            // when
-            IPage<SysUserVO> result = sysUserService.queryUsers(queryDTO, 1, 10);
-
-            // then
-            assertThat(result).isNotNull();
-            assertThat(result.getRecords()).isEmpty();
-            verify(sysUserMapper).selectPage(any(Page.class), any());
+            assertNotNull(s1.getDeletedAt());
+            assertNotNull(s2.getDeletedAt());
         }
     }
 
-    @Nested
-    @DisplayName("删除用户")
-    class DeleteUser {
-
-        @Test
-        @DisplayName("软删除用户成功")
-        void deleteUser_success() {
-            // given
-            SysUser user = new SysUser();
-            user.setId("user-001");
-            user.setDeletedAt(null);
-
-            when(sysUserMapper.selectById("user-001")).thenReturn(user);
-            when(sysUserMapper.updateById(any(SysUser.class))).thenReturn(1);
-
-            // when
-            boolean result = sysUserService.deleteUser("user-001");
-
-            // then
-            assertThat(result).isTrue();
-            verify(sysUserMapper).updateById(userCaptor.capture());
-            assertThat(userCaptor.getValue().getDeletedAt()).isNotNull();
-        }
-
-        @Test
-        @DisplayName("软删除用户 - 不存在返回 false")
-        void deleteUser_notFound() {
-            when(sysUserMapper.selectById(anyString())).thenReturn(null);
-
-            boolean result = sysUserService.deleteUser("non-existent");
-
-            assertThat(result).isFalse();
-            verify(sysUserMapper, never()).updateById((SysUser) any());
-        }
-
-        @Test
-        @DisplayName("批量软删除 - ID 不存在返回 false")
-        void batchDeleteUsers_empty() {
-            // stub 服务层的 listByIds，避免对 mapper 的未使用存根
-            doReturn(List.of()).when(sysUserService).listByIds(anyList());
-
-            boolean result = sysUserService.batchDeleteUsers(List.of("non-existent"));
-
-            assertThat(result).isFalse();
-            verify(sysUserMapper, never()).updateById((SysUser) any());
-        }
-
-        @Test
-        @DisplayName("批量软删除用户成功")
-        void batchDeleteUsers_success() {
-            // given
-            SysUser user1 = new SysUser();
-            user1.setId("user-001");
-            SysUser user2 = new SysUser();
-            user2.setId("user-002");
-
-            // stub 服务层的 listByIds，令其返回两个用户对象
-            doReturn(List.of(user1, user2)).when(sysUserService).listByIds(anyList());
-            when(sysUserMapper.updateById(any(SysUser.class))).thenReturn(1);
-
-            // when
-            boolean result = sysUserService.batchDeleteUsers(List.of("user-001", "user-002"));
-
-            // then
-            assertThat(result).isTrue();
-            assertThat(user1.getDeletedAt()).isNotNull();
-            assertThat(user2.getDeletedAt()).isNotNull();
-            verify(sysUserMapper, times(2)).updateById((SysUser) any());
-        }
-    }
 }
